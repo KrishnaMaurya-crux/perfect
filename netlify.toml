@@ -1,0 +1,5 @@
+[build]
+  command = "npx prisma generate && npx next build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
