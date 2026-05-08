@@ -83,16 +83,16 @@ export default function HistoryPanel() {
   };
 
   return (
-    <div className="min-h-screen pt-20 bg-white">
+    <div className="min-h-screen pt-20 bg-card">
       {/* ── Header ── */}
-      <section className="border-b border-gray-100 bg-gray-50/50">
+      <section className="border-b border-border bg-muted/30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Breadcrumb */}
           <motion.button
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={navigateHome}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors group mb-4"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group mb-4"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back to Home
@@ -107,11 +107,11 @@ export default function HistoryPanel() {
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-primary" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                 My Activity
               </h1>
             </div>
-            <p className="text-gray-500 text-sm sm:text-base">
+            <p className="text-muted-foreground text-sm sm:text-base">
               View your recent tool usage and results.
             </p>
           </motion.div>
@@ -122,8 +122,8 @@ export default function HistoryPanel() {
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">Loading history...</span>
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading history...</span>
           </div>
         ) : history.length === 0 ? (
           /* ── Empty State ── */
@@ -132,13 +132,13 @@ export default function HistoryPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-              <Inbox className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="text-lg font-semibold text-foreground mb-1">
               No activity yet
             </h3>
-            <p className="text-sm text-gray-500 mb-6 text-center max-w-xs">
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-xs">
               Your tool usage history will appear here. Try summarizing a PDF, generating notes, or checking a resume.
             </p>
             <Button onClick={navigateHome} className="gap-2">
@@ -150,7 +150,7 @@ export default function HistoryPanel() {
           /* ── History List ── */
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {history.length} item{history.length !== 1 ? "s" : ""}
               </p>
             </div>
@@ -167,7 +167,7 @@ export default function HistoryPanel() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
                     transition={{ delay: index * 0.04 }}
-                    className="group bg-white border border-gray-200 rounded-xl p-4 sm:p-5 hover:shadow-md hover:border-gray-300 transition-all"
+                    className="group bg-card border border-border rounded-xl p-4 sm:p-5 hover:shadow-md hover:border-border transition-all"
                   >
                     <div className="flex items-start gap-3 sm:gap-4">
                       {/* Tool Icon */}
@@ -180,7 +180,7 @@ export default function HistoryPanel() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="text-sm font-semibold text-gray-900 truncate">
+                              <h4 className="text-sm font-semibold text-foreground truncate">
                                 {entry.fileName}
                               </h4>
                               <Badge
@@ -190,7 +190,7 @@ export default function HistoryPanel() {
                                 {entry.toolName}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {formatHistoryDate(entry.createdAt)}
@@ -204,7 +204,7 @@ export default function HistoryPanel() {
                             </div>
                             {/* Result summary preview */}
                             {entry.resultSummary && (
-                              <p className="text-xs text-gray-500 mt-1.5 line-clamp-1 max-w-md">
+                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1 max-w-md">
                                 {entry.resultSummary}
                               </p>
                             )}
@@ -215,7 +215,7 @@ export default function HistoryPanel() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-400 hover:text-gray-700"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
                               onClick={() => handleViewResult(entry)}
                               title="View Result"
                             >
@@ -224,7 +224,7 @@ export default function HistoryPanel() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-gray-400 hover:text-red-500"
+                              className="h-8 w-8 text-muted-foreground hover:text-red-500"
                               onClick={() => setDeleteId(entry.id)}
                               title="Delete"
                             >
