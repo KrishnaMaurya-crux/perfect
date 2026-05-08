@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import CloudUploadButtons from "./CloudUploadButtons";
 import { useAppStore } from "@/lib/store";
 import { getToolById, getCategoryForTool } from "@/lib/tools";
 import { getToolConfig } from "@/lib/tool-configs";
@@ -41,6 +40,9 @@ import {
   downloadMultipleAsZip,
   type ProcessResult,
 } from "@/lib/pdf-processor";
+import CloudStorageButtons from "@/components/tool/CloudStorageButtons";
+import { saveToGoogleDrive } from "@/lib/google-drive";
+
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -276,12 +278,14 @@ export default function ToolPage() {
     isProcessing,
     isComplete,
     processingProgress,
+    processingStatus,
     navigateHome,
     addFiles,
     removeFile,
     clearFiles,
     startProcessing,
     setProcessingProgress,
+    setProcessingStatus,
     completeProcessing,
     resetTool,
   } = useAppStore();
@@ -374,21 +378,30 @@ export default function ToolPage() {
     setCurrentStep(0);
     setProcessResult(null);
 
+    // Determine if this tool supports real progress (format converters)
+    const formatTools = [
+      "jpg-to-pdf", "pdf-to-jpg", "pdf-to-word", "pdf-to-excel",
+      "word-to-pdf", "excel-to-pdf", "powerpoint-to-pdf"
+    ];
+    const isFormatTool = formatTools.includes(selectedToolId);
+
+    // For non-format tools, use fake progress animation
     const steps = config.processingSteps || ["Processing..."];
     const stepSize = 100 / steps.length;
-
-    // Start progress animation
     let progress = 0;
-    progressIntervalRef.current = setInterval(() => {
-      progress += Math.random() * 5 + 1;
-      if (progress > 90) progress = 90; // Cap at 90 until actual processing completes
-      const stepIndex = Math.min(
-        Math.floor(progress / stepSize),
-        steps.length - 1
-      );
-      setCurrentStep(stepIndex);
-      setProcessingProgress(Math.min(progress, 90));
-    }, 300);
+
+    if (!isFormatTool) {
+      progressIntervalRef.current = setInterval(() => {
+        progress += Math.random() * 5 + 1;
+        if (progress > 90) progress = 90;
+        const stepIndex = Math.min(
+          Math.floor(progress / stepSize),
+          steps.length - 1
+        );
+        setCurrentStep(stepIndex);
+        setProcessingProgress(Math.min(progress, 90));
+      }, 300);
+    }
 
     try {
       // Do the actual processing
@@ -397,7 +410,19 @@ export default function ToolPage() {
         uploadedFiles,
         optionValues,
         compareFileA,
-        compareFileB
+        compareFileB,
+        isFormatTool
+          ? (status: string, percent: number) => {
+              setProcessingStatus(status);
+              setProcessingProgress(percent);
+              // Update step based on progress
+              const stepIndex = Math.min(
+                Math.floor(percent / stepSize),
+                steps.length - 1
+              );
+              setCurrentStep(stepIndex);
+            }
+          : undefined
       );
 
       setProcessResult(result);
@@ -407,6 +432,7 @@ export default function ToolPage() {
         clearInterval(progressIntervalRef.current);
       setCurrentStep(steps.length - 1);
       setProcessingProgress(100);
+      setProcessingStatus("Complete!");
       completeProcessing();
 
       if (result.success) {
@@ -451,12 +477,58 @@ export default function ToolPage() {
     };
   }, []);
 
+  // Scroll to top when processing completes — result should be visible at top
+  useEffect(() => {
+    if (isComplete) {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
+  }, [isComplete]);
+
   if (!tool || !selectedToolId || !config) return null;
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     handleFileSelection(Array.from(e.dataTransfer.files));
+  };
+
+  const handleCloudFilesSelected = (files: File[]) => {
+    if (files.length === 0) return;
+    handleFileSelection(files);
+    toast({
+      title: "Files imported",
+      description: `${files.length} file(s) imported from cloud storage`,
+    });
+  };
+
+  const handleCloudSave = async (provider: "google-drive") => {
+    const result = processResult;
+    if (!result || !result.success || result.outputFiles.length === 0) {
+      toast({
+        title: "No file to save",
+        description: "Please process a file first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Use first output file for cloud save
+    const outputFile = result.outputFiles[0];
+    try {
+      await saveToGoogleDrive(outputFile.data, outputFile.name);
+      toast({
+        title: "Saved to Google Drive",
+        description: `${outputFile.name} saved successfully`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (!msg.includes("cancel") && !msg.includes("Cancel")) {
+        toast({
+          title: "Save to Google Drive failed",
+          description: msg,
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleFileSelection = (files: File[]) => {
@@ -759,14 +831,19 @@ export default function ToolPage() {
                           {tool.maxFileSize || "100MB"}
                           {tool.multipleFiles && " • Multiple files allowed"}
                         </p>
-                        <CloudUploadButtons
-                          onFilesSelected={handleFileSelection}
-                          acceptTypes={tool.acceptTypes}
-                          compact
-                        />
                       </div>
                     </div>
                   )}
+
+                  {/* Cloud Storage Import Buttons — ALWAYS visible outside conditional */}
+                  <div className="flex items-center gap-3 justify-center mt-5">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">or import from</span>
+                    <CloudStorageButtons
+                      mode="upload"
+                      onFilesSelected={handleCloudFilesSelected}
+                      acceptTypes={tool.acceptTypes}
+                    />
+                  </div>
 
                   {/* MERGE: reorderable file list */}
                   {selectedToolId === "merge-pdf" && uploadedFiles.length > 0 && (
@@ -974,7 +1051,9 @@ export default function ToolPage() {
               <div className="max-w-md mx-auto">
                 <Progress value={processingProgress} className="h-2 mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {Math.round(processingProgress)}% complete
+                  {processingStatus
+                    ? processingStatus
+                    : `${Math.round(processingProgress)}% complete`}
                 </p>
               </div>
             </motion.div>
@@ -1071,6 +1150,17 @@ export default function ToolPage() {
                   Process Another
                 </Button>
               </div>
+
+              {/* Cloud Save Buttons */}
+              {processResult?.success && processResult.outputFiles.length > 0 && (
+                <div className="flex items-center gap-4 justify-center mt-6">
+                  <span className="text-xs text-muted-foreground">or save to</span>
+                  <CloudStorageButtons
+                    mode="download"
+                    onCloudSave={handleCloudSave}
+                  />
+                </div>
+              )}
 
               {/* Output files list for multiple files */}
               {processResult?.success &&

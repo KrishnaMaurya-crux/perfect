@@ -439,13 +439,19 @@ export default function LivePreview({
     return { text, opacity, rotation, fontSize, rgba: colorMap[color] || colorMap.gray };
   }, [toolId, optionValues]);
 
-  // Sign style
+  // Sign style — supports type, draw, and upload modes
   const signStyle = useMemo(() => {
     if (toolId !== "sign-pdf") return null;
+    const signType = String(optionValues["sign-type"] || "type");
     const name = String(optionValues["signer-name"] || "");
     const position = String(optionValues["position"] || "bottom-right");
     const page = Number(optionValues["page"] || 1);
-    return { name, position, page };
+    const signColor = String(optionValues["sign-color"] || "#00008B");
+    const signFontSize = Number(optionValues["sign-font-size"] || 36);
+    const signFont = String(optionValues["sign-font"] || "georgia");
+    const signatureData = String(optionValues["signature-data"] || "");
+    const sigImageSize = Number(optionValues["sig-image-size"] || 200);
+    return { signType, name, position, page, signColor, signFontSize, signFont, signatureData, sigImageSize };
   }, [toolId, optionValues]);
 
   // Organize mode
@@ -577,18 +583,26 @@ export default function LivePreview({
 
             {/* Tool-specific info bar: sign-pdf */}
             {toolId === "sign-pdf" && signStyle && (
-              <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center gap-4">
+              <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center gap-4 flex-wrap">
                 <span className="text-xs font-medium">Signature Preview</span>
-                {signStyle.name && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {signStyle.signType === "type" ? "Typed" : signStyle.signType === "draw" ? "Drawn" : "Uploaded"}
+                </Badge>
+                {signStyle.signType === "type" && signStyle.name && (
                   <Badge variant="outline" className="text-xs">
                     {signStyle.name}
+                  </Badge>
+                )}
+                {signStyle.signType !== "type" && signStyle.signatureData && (
+                  <Badge variant="outline" className="text-xs text-emerald-600">
+                    ✓ Signature ready
                   </Badge>
                 )}
                 <span className="text-xs text-muted-foreground">
                   Position: <strong>{signStyle.position}</strong>
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  On page: <strong>{signStyle.page}</strong>
+                  On page: <strong>{signStyle.page || "Last"}</strong>
                 </span>
               </div>
             )}
@@ -711,41 +725,77 @@ export default function LivePreview({
                         </div>
                       )}
 
-                      {/* Signature overlay */}
-                      {signStyle &&
-                        signStyle.name &&
-                        signStyle.page === page.pageNum && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-end pb-4 px-4 pointer-events-none">
-                            <div
-                              className={`flex flex-col items-center ${
-                                signStyle.position.includes("top")
-                                  ? "absolute top-4"
-                                  : ""
-                              } ${
-                                signStyle.position.includes("left")
-                                  ? "absolute left-2"
-                                  : ""
-                              } ${
-                                signStyle.position.includes("right")
-                                  ? "absolute right-2"
-                                  : ""
-                              } ${
-                                signStyle.position === "bottom-center" ||
-                                signStyle.position === "top-center"
-                                  ? "left-1/2 -translate-x-1/2"
-                                  : ""
-                              }`}
-                            >
-                              <span className="text-xs italic text-blue-700 dark:text-blue-300">
-                                {signStyle.name}
-                              </span>
-                              <div className="w-20 h-px bg-blue-700/60 dark:bg-blue-300/60 mt-0.5" />
-                              <span className="text-[7px] text-gray-500 mt-0.5">
-                                Digital Signature
-                              </span>
-                            </div>
+                      {/* Signature overlay — type, draw, and upload modes */}
+                      {signStyle && (() => {
+                        const isOnThisPage = !signStyle.page || signStyle.page === page.pageNum;
+                        if (!isOnThisPage) return null;
+
+                        const hasTypedName = signStyle.signType === "type" && signStyle.name;
+                        const hasSignatureImage = (signStyle.signType === "draw" || signStyle.signType === "upload") && signStyle.signatureData;
+                        if (!hasTypedName && !hasSignatureImage) return null;
+
+                        // Position mapping
+                        const posMap: Record<string, string> = {
+                          "bottom-right": "bottom-3 right-3 items-end justify-end",
+                          "bottom-left": "bottom-3 left-3 items-end justify-start",
+                          "bottom-center": "bottom-3 left-1/2 -translate-x-1/2 items-end justify-center",
+                          "top-right": "top-3 right-3 items-start justify-end",
+                          "top-left": "top-3 left-3 items-start justify-start",
+                          "top-center": "top-3 left-1/2 -translate-x-1/2 items-start justify-center",
+                        };
+                        const posClass = posMap[signStyle.position] || posMap["bottom-right"];
+
+                        // Font map for typed signatures (using next/font CSS variables)
+                        const fontMap: Record<string, string> = {
+                          georgia: "Georgia, serif",
+                          palatino: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+                          dancing: "var(--font-dancing), cursive",
+                          greatvibes: "var(--font-greatvibes), cursive",
+                          kalam: "var(--font-kalam), cursive",
+                          parisienne: "var(--font-parisienne), cursive",
+                          caveat: "var(--font-caveat), cursive",
+                        };
+
+                        return (
+                          <div className={`absolute inset-0 flex ${posClass} pointer-events-none p-2`}>
+                            {hasTypedName ? (
+                              <div className="flex flex-col items-center">
+                                <span
+                                  style={{
+                                    fontFamily: fontMap[signStyle.signFont] || "Georgia, serif",
+                                    fontSize: `${Math.max(signStyle.signFontSize * 0.4, 14)}px`,
+                                    color: signStyle.signColor,
+                                    fontStyle: "italic",
+                                    textShadow: "0 1px 2px rgba(255,255,255,0.8)",
+                                  }}
+                                >
+                                  {signStyle.name}
+                                </span>
+                                <div
+                                  className="mt-0.5"
+                                  style={{
+                                    width: `${Math.max(signStyle.signFontSize * 0.9, 50)}px`,
+                                    height: "1px",
+                                    backgroundColor: signStyle.signColor + "88",
+                                  }}
+                                />
+                              </div>
+                            ) : hasSignatureImage ? (
+                              <img
+                                src={signStyle.signatureData}
+                                alt="Signature preview"
+                                className="object-contain"
+                                style={{
+                                  maxWidth: `${Math.max(signStyle.sigImageSize * 0.4, 60)}px`,
+                                  maxHeight: `${Math.max(signStyle.sigImageSize * 0.4, 60)}px`,
+                                  opacity: 0.95,
+                                  filter: "drop-shadow(0 1px 2px rgba(255,255,255,0.8))",
+                                }}
+                              />
+                            ) : null}
                           </div>
-                        )}
+                        );
+                      })()}
 
                       {/* Page number overlay */}
                       {pageNumStyle && (

@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import CloudUploadButtons from "./CloudUploadButtons";
 import {
   Accordion,
   AccordionContent,
@@ -37,6 +36,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAppStore } from "@/lib/store";
 import { saveHistory } from "@/lib/history";
+import CloudStorageButtons from "@/components/tool/CloudStorageButtons";
 // Enhanced PDF Summary module
 import { summarizePDF } from "@/lib/pdf-summary-tool/index";
 import type { SummaryResult as EnhancedSummaryResult } from "@/lib/pdf-summary-tool/index";
@@ -351,8 +351,6 @@ export default function AIToolPage({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── File handling ──
-  const [showProTip, setShowProTip] = useState(false);
-
   const handleFileSelection = (selected: File) => {
     if (selected.type !== "application/pdf" && !selected.name.toLowerCase().endsWith(".pdf")) {
       setError("Please upload a PDF file.");
@@ -363,19 +361,9 @@ export default function AIToolPage({
       setError(`File is too large. Maximum size is ${meta.maxFileSize} MB.`);
       return;
     }
-    // Pro Tip: show compress suggestion if file > 50MB
-    if (selected.size > 50 * 1024 * 1024) {
-      setShowProTip(true);
-    }
     setError(null);
     setResult(null);
     setFile(selected);
-  };
-
-  const handleCloudFilesSelected = (files: File[]) => {
-    if (files.length > 0) {
-      handleFileSelection(files[0]);
-    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -397,7 +385,6 @@ export default function AIToolPage({
     setError(null);
     setProgress(0);
     setCurrentStep(0);
-    setShowProTip(false);
   };
 
   // ── Processing ──
@@ -541,7 +528,6 @@ export default function AIToolPage({
     setProgress(0);
     setCurrentStep(0);
     setCopied(false);
-    setShowProTip(false);
   };
 
   // ── Score helpers ──
@@ -1162,48 +1148,20 @@ export default function AIToolPage({
                     <p className="text-xs text-muted-foreground">
                       PDF files up to {meta.maxFileSize}MB supported.
                     </p>
-                    <CloudUploadButtons
-                      onFilesSelected={handleCloudFilesSelected}
-                      acceptTypes=".pdf"
-                      compact
-                    />
                   </div>
                 </div>
               )}
 
-              {/* Pro Tip: 50MB Compress suggestion */}
-              {showProTip && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-sm flex items-start gap-2.5"
-                >
-                  <span className="text-lg flex-shrink-0">💡</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-amber-900 dark:text-amber-200 mb-0.5">
-                      Pro Tip
-                    </p>
-                    <p className="text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
-                      File size more than 50MB? Use our{" "}
-                      <button
-                        type="button"
-                        className="font-semibold underline underline-offset-2 hover:text-amber-600 dark:hover:text-amber-100 transition-colors"
-                        onClick={() => useAppStore.getState().selectTool("compress-pdf")}
-                      >
-                        Compress PDF
-                      </button>{" "}
-                      tool to reduce it first.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="flex-shrink-0 text-amber-400 hover:text-amber-600 dark:text-amber-600 dark:hover:text-amber-400 transition-colors"
-                    onClick={() => setShowProTip(false)}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </motion.div>
-              )}
+              {/* Cloud Storage Import Buttons — ALWAYS visible */}
+              <div className="flex items-center gap-3 justify-center">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">or import from</span>
+                <CloudStorageButtons
+                  mode="upload"
+                  onFilesSelected={(files) => {
+                    if (files.length > 0) handleFileSelection(files[0]);
+                  }}
+                />
+              </div>
 
               {/* File card (after upload) */}
               {file && (

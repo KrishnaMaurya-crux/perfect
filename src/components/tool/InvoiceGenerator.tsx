@@ -915,7 +915,7 @@ export default function InvoiceGenerator() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed"
           >
-            Create stunning invoices in seconds — free forever. No account needed.
+            Create stunning invoices in seconds — 1 token per invoice.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -1919,7 +1919,7 @@ export default function InvoiceGenerator() {
   // ========================
   const renderFeatures = () => {
     const features = [
-      { icon: Zap, title: "Free Forever", description: "No hidden fees, no premium tiers. Every feature is completely free.", color: "text-amber-500", bg: "bg-amber-50" },
+      { icon: Zap, title: "1 Token = 1 Invoice", description: "Simple and fair — every invoice download costs 1 Non-AI token. Premium users get unlimited.", color: "text-amber-500", bg: "bg-amber-50" },
       { icon: Shield, title: "No Account Needed", description: "Start creating invoices immediately. No signup, no email, no login.", color: "text-emerald-500", bg: "bg-emerald-50" },
       { icon: Globe, title: "40+ Currencies", description: "Support for USD, EUR, GBP, INR, and 36 more world currencies.", color: "text-blue-500", bg: "bg-blue-50" },
       { icon: Languages, title: "31 Languages", description: "Create invoices in English, Hindi, Spanish, French, and more.", color: "text-violet-500", bg: "bg-violet-50" },
@@ -1972,9 +1972,9 @@ export default function InvoiceGenerator() {
   // ========================
   const renderFAQ = () => {
     const faqs = [
-      { q: "Is it really free?", a: "Yes, 100% free forever. There are no hidden charges, no premium tiers, and no watermarks on your invoices. Every feature is available at no cost." },
+      { q: "Is it really free?", a: "The first 12 invoices per month are free with the Free plan. Each invoice costs 1 Non-AI token. Upgrade to Premium for unlimited invoices per month along with all other PDF tools." },
       { q: "Do I need an account?", a: "No signup required. You can start creating invoices immediately without creating an account, providing an email, or logging in." },
-      { q: "How many invoices can I create?", a: "Unlimited! There is no limit on the number of invoices you can create, download, or print. Create as many as you need." },
+      { q: "How many invoices can I create?", a: "Free plan: 12 invoices per month (1 token each). Premium plan: Unlimited invoices. Enterprise plan: Unlimited invoices with team features." },
       { q: "What currencies are supported?", a: "We support 40+ currencies including USD, EUR, GBP, INR, CAD, AUD, JPY, CNY, and many more. The currency formatting adapts to each currency's locale conventions." },
       { q: "Are there custom templates?", a: "Yes! We offer 6 professional color themes: Classic, Royal Blue, Emerald, Crimson, Amber Gold, and Violet. All use the same premium invoice layout with your choice of accent color." },
       { q: "Can I upload an existing PDF invoice?", a: "Yes! Use the 'Upload & Edit' tab to drag-and-drop a PDF invoice. Our system extracts the text content so you can review and edit it." },
@@ -2074,8 +2074,8 @@ export default function InvoiceGenerator() {
               transition={{ delay: 0.3 }}
               className="text-lg text-white/80 max-w-xl mx-auto mb-8 leading-relaxed"
             >
-              Join thousands of freelancers and businesses who trust our free invoice generator.
-              Professional invoices, zero cost.
+              Join thousands of freelancers and businesses who create professional invoices with PdfCrux.
+              1 token = 1 invoice.
             </motion.p>
 
             <motion.div
